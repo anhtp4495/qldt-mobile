@@ -60,30 +60,42 @@ class StudentAttendanceController extends GetxController {
     scanning = true;
     print('Start scanning!');
     // Start scanning
-    bluetooth.startScan(timeout: const Duration(seconds: 10));
+    try {
+      bluetooth.startScan(timeout: const Duration(seconds: 10));
 
-    // Listen to scan results
-    bluetooth.scanResults.listen((results) {
-      // do something with scan results
-      bool shouldUpdated = false;
-      for (ScanResult r in results) {
-        int thietBiIndex =
-            danhSachThietBi.indexWhere((ele) => ele == r.deviceIdentifier);
-        if (thietBiIndex == -1) {
-          shouldUpdated = true;
-          danhSachThietBi.add(r.deviceIdentifier);
-          if (!_updateDiemDanh(
-              _findSinhVien(r.deviceIdentifier), r.deviceIdentifier)) {
-            danhSachDiemDanh.add(DiemDanh('...', 'Chưa xác định',
-                r.deviceIdentifier, false, DateTime.now()));
+      // Listen to scan results
+      bluetooth.scanResults.listen((results) {
+        // do something with scan results
+        bool shouldUpdated = false;
+        for (ScanResult r in results) {
+          int thietBiIndex =
+              danhSachThietBi.indexWhere((ele) => ele == r.deviceIdentifier);
+          if (thietBiIndex == -1) {
+            shouldUpdated = true;
+            danhSachThietBi.add(r.deviceIdentifier);
+            if (!_updateDiemDanh(
+                _findSinhVien(r.deviceIdentifier), r.deviceIdentifier)) {
+              danhSachDiemDanh.add(DiemDanh('...', 'Chưa xác định',
+                  r.deviceIdentifier, false, DateTime.now()));
+            }
           }
         }
-      }
 
-      if (shouldUpdated) {
-        updateState();
-      }
-    });
+        if (shouldUpdated) {
+          updateState();
+        }
+      });
+    } catch (err) {
+      showDialog(
+          context: Get.context!,
+          builder: (context) {
+            return SimpleDialog(
+              title: Text("Lỗi".toUpperCase()),
+              contentPadding: const EdgeInsets.all(20),
+              children: [Text(err.toString())],
+            );
+          });
+    }
   }
 
   Future stopScan() async {
