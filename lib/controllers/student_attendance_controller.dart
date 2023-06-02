@@ -152,8 +152,16 @@ class StudentAttendanceController extends GetxController {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $accessToken'
     };
+
+    List<SinhVien> danhSachSinhVien = danhSachDiemDanh
+        .where((dd) => dd.coMat && dd.maSinhVien != 'Chưa xác định')
+        .map<SinhVien>(
+            (dd) => SinhVien(dd.maSinhVien, dd.tenSinhVien, [dd.maThietBi]))
+        .toList();
+
     final body = {
-      'danhSachDiemDanh': danhSachDiemDanh.toString(),
+      'Id': maBuoiHoatDong.toString(),
+      'DanhSachSinhVien': danhSachSinhVien.toString(),
     };
 
     var url = Uri.parse(ApiEndpoints.instance.attendanceEndpoint);
