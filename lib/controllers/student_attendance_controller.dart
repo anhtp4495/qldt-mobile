@@ -154,7 +154,7 @@ class StudentAttendanceController extends GetxController {
     };
 
     List<SinhVien> danhSachSinhVien = danhSachDiemDanh
-        .where((dd) => dd.coMat && dd.maSinhVien != 'Chưa xác định')
+        .where((dd) => dd.coMat && dd.maSinhVien != '...')
         .map<SinhVien>(
             (dd) => SinhVien(dd.maSinhVien, dd.tenSinhVien, [dd.maThietBi]))
         .toList();

@@ -15,6 +15,8 @@ class ApiEndpoints {
   final String _activity = "hoatdong";
   final String _sessionList = "danhsachbuoi";
   final String _studentList = "danhsachsinhvien";
+  final String _student = "sinhvien";
+  final String _device = "thietbi";
 
   ApiEndpoints();
 
@@ -25,4 +27,5 @@ class ApiEndpoints {
   String get activityEndpoint => '$baseUrl/$_activity';
   String get activitySessionEndpoint => '$baseUrl/$_activity/$_sessionList';
   String get studentAttendanceEndpoint => '$baseUrl/$_activity/$_studentList';
+  String get studentDeviceEndpoint => '$baseUrl/$_student/$_device';
 }

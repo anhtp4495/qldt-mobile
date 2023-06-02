@@ -1,6 +1,6 @@
 class DiemDanh {
-  final String maSinhVien;
-  final String tenSinhVien;
+  String maSinhVien;
+  String tenSinhVien;
   String maThietBi;
   bool coMat;
   DateTime? thoiGian;
