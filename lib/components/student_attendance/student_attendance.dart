@@ -19,9 +19,9 @@ class _StudentAttendanceState extends State<StudentAttendance> {
     setState(() {});
   }
 
-  ElevatedButton getButton() {
+  Widget getButton() {
     if (controller.scanning) {
-      return ElevatedButton(
+      return IconButton(
         onPressed: () {
           controller.stopScan();
           setState(() {});
@@ -33,26 +33,16 @@ class _StudentAttendanceState extends State<StudentAttendance> {
             borderRadius: BorderRadius.all(Radius.circular(5)),
           ),
         ),
-        child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: const [
-              Icon(
-                Icons.stop_sharp,
-                color: Colors.white,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'Dừng điểm danh',
-                style: TextStyle(fontSize: 18),
-              )
-            ]),
+        icon: Icon(
+          Icons.stop_sharp,
+          color: Colors.white,
+        ),
       );
     }
 
-    return ElevatedButton(
+    return IconButton(
       onPressed: () {
-        controller.startScan(updateState);
+        controller.startScan();
         setState(() {});
       },
       style: ElevatedButton.styleFrom(
@@ -62,17 +52,10 @@ class _StudentAttendanceState extends State<StudentAttendance> {
           borderRadius: BorderRadius.all(Radius.circular(5)),
         ),
       ),
-      child: Row(children: const [
-        Icon(
-          Icons.play_arrow_sharp,
-          color: Colors.white,
-        ),
-        SizedBox(width: 8),
-        Text(
-          'Bắt đầu điểm danh',
-          style: TextStyle(fontSize: 18),
-        )
-      ]),
+      icon: Icon(
+        Icons.play_arrow_sharp,
+        color: Colors.white,
+      ),
     );
   }
 
@@ -81,11 +64,13 @@ class _StudentAttendanceState extends State<StudentAttendance> {
     return AppbarBackground(
         title: "Điểm danh",
         child: FutureBuilder(
-            future: controller.initController(),
+            future: controller.initController(updateState),
             builder: (context, snapshot) {
               if (snapshot.hasData) {
                 return SingleChildScrollView(
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         controller.tieuDe,
@@ -100,8 +85,32 @@ class _StudentAttendanceState extends State<StudentAttendance> {
                         children: [
                           getButton(),
                           const SizedBox(width: 8),
+                          IconButton(
+                            onPressed: () async {
+                              bool scanning = controller.scanning;
+                              await controller.stopScan();
+                              await controller.reload(updateState);
+                              if (scanning) controller.startScan();
+                              setState(() {});
+                            },
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.blue,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(5)),
+                              ),
+                            ),
+                            icon: Icon(
+                              Icons.refresh_sharp,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
                           ElevatedButton(
-                            onPressed: controller.dongBoDuLieuDiemDanh,
+                            onPressed: controller.scanning
+                                ? null
+                                : controller.dongBoDuLieuDiemDanh,
                             style: ElevatedButton.styleFrom(
                               foregroundColor: Colors.white,
                               backgroundColor: Colors.blue,
@@ -125,14 +134,36 @@ class _StudentAttendanceState extends State<StudentAttendance> {
                         ],
                       ),
                       const SizedBox(height: 20),
+                      controller.scanning
+                          ? const LinearProgressIndicator()
+                          : const SizedBox(
+                              width: 8,
+                            ),
+                      Text(
+                        'Danh sách điểm danh',
+                        style: TextStyle(fontSize: 18),
+                      ),
                       ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: controller.danhSachDiemDanh.length,
+                        itemCount: controller.danhSachCoMat.length,
                         itemBuilder: (context, index) {
                           return StudentAttendanceItem(
                               onPressed: updateState,
-                              diemDanh: controller.danhSachDiemDanh[index],
+                              diemDanh:
+                                  controller.danhSachCoMat.elementAt(index),
+                              index: index);
+                        },
+                      ),
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: controller.danhSachVang.length,
+                        itemBuilder: (context, index) {
+                          return StudentAttendanceItem(
+                              onPressed: updateState,
+                              diemDanh:
+                                  controller.danhSachVang.elementAt(index),
                               index: index);
                         },
                       ),

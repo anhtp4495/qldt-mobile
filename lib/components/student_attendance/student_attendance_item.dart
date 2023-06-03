@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // ignore: unused_import
 import 'package:http/http.dart' as http;
 import '/models/diem_danh.dart';
 import '/constants/api_endpoints.dart';
+import '/controllers/student_attendance_controller.dart';
 
 class StudentAttendanceItem extends StatefulWidget {
   final int index;
@@ -85,6 +87,9 @@ class _StudentAttendanceItemState extends State<StudentAttendanceItem> {
           widget.diemDanh.tenSinhVien = sv["TenSinhVien"];
           widget.diemDanh.coMat = true;
         });
+        final StudentAttendanceController controller = Get.find<StudentAttendanceController>();
+        controller.updateDiemDanh(widget.diemDanh);
+
       } else {
         final json = jsonDecode(response.body);
         throw json["error_message"] ?? "Unknown error occurred";

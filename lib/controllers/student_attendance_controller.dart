@@ -15,16 +15,22 @@ class StudentAttendanceController extends GetxController {
   final IBluetooth bluetooth = BluetoothFactory.createBluetooth();
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   bool _initialized = false;
-  bool scanning = false;
+  bool _scanning = false;
   List<SinhVien> _danhSachSinhVien = [];
   List<DiemDanh> _danhSachDiemDanh = [];
   List<String> _danhSachThietBi = [];
   String _maHoatDong = '';
   String _tenBuoiHoatDong = '';
 
-  Future<bool> initController() async {
+  Function? _updateState = null;
+
+  Future<bool> initController(Function updateState) async {
     if (_initialized) return true;
     _initialized = true;
+    _danhSachSinhVien = [];
+    _danhSachDiemDanh = [];
+    _danhSachThietBi = [];
+    _updateState = updateState;
 
     final SharedPreferences prefs = await _prefs;
     _maHoatDong = prefs.getString('ma_hoat_dong')!;
@@ -37,6 +43,11 @@ class StudentAttendanceController extends GetxController {
 
     print('initialized');
     return true;
+  }
+
+  Future<bool> reload(Function updateState) async {
+    _initialized = false;
+    return await initController(updateState);
   }
 
   String _findSinhVien(ScanResult result) {
@@ -66,12 +77,18 @@ class StudentAttendanceController extends GetxController {
     return false;
   }
 
-  Future startScan(Function updateState) async {
-    scanning = true;
-    print('Start scanning!');
-    // Start scanning
+  Future startScan() async {
+    _scanning = true;
+    print('Start _scanning!');
+    // Start _scanning
     try {
-      bluetooth.startScan(timeout: const Duration(seconds: 10));
+      bluetooth.startScan(timeout: const Duration(minutes: 15)).then((value) {
+        _scanning = false;
+        _updateState!();
+      }).catchError((err) {
+        _scanning = false;
+        _updateState!();
+      });
 
       // Listen to scan results
       bluetooth.scanResults.listen((results) {
@@ -93,7 +110,7 @@ class StudentAttendanceController extends GetxController {
         }
 
         if (shouldUpdated) {
-          updateState();
+          _updateState!();
         }
       });
     } catch (err) {
@@ -110,9 +127,9 @@ class StudentAttendanceController extends GetxController {
   }
 
   Future stopScan() async {
-    scanning = false;
-    print('Stop scanning!');
-    // Stop scanning
+    _scanning = false;
+    print('Stop _scanning!');
+    // Stop _scanning
     await bluetooth.stopScan();
   }
 
@@ -122,6 +139,7 @@ class StudentAttendanceController extends GetxController {
     if (index > -1) {
       _danhSachDiemDanh[index] = diemDanh;
     }
+    if (_updateState != null) _updateState!();
   }
 
   Future<List<SinhVien>> _getDanhSachSinhVien() async {
@@ -215,6 +233,7 @@ class StudentAttendanceController extends GetxController {
   }
 
   bool get isLoaded => _initialized;
+  bool get scanning => _scanning;
   String get tieuDe => '$_maHoatDong $_tenBuoiHoatDong';
 
   int get _siso => _danhSachSinhVien.length;
@@ -224,5 +243,9 @@ class StudentAttendanceController extends GetxController {
   String get thongTinDiemDanh =>
       'Sỉ số: $_siso, Có mặt: $_comat, Vắng: $_vang';
 
+  Iterable<DiemDanh> get danhSachCoMat =>
+      _danhSachDiemDanh.where((diemdanh) => diemdanh.coMat);
+  Iterable<DiemDanh> get danhSachVang =>
+      _danhSachDiemDanh.where((diemdanh) => !diemdanh.coMat);
   List<DiemDanh> get danhSachDiemDanh => _danhSachDiemDanh;
 }
