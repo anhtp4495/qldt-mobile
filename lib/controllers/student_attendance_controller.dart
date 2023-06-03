@@ -64,7 +64,7 @@ class StudentAttendanceController extends GetxController {
     return "";
   }
 
-  bool _updateDiemDanh(maSinhVien, maThietBi) {
+  bool _updateDiemDanh(String maSinhVien, String maThietBi) {
     int index =
         _danhSachDiemDanh.indexWhere((ele) => ele.maSinhVien == maSinhVien);
     if (index != -1) {
@@ -102,7 +102,7 @@ class StudentAttendanceController extends GetxController {
           if (thietBiIndex == -1) {
             shouldUpdated = true;
             _danhSachThietBi.add(r.deviceIdentifier);
-            if (!_updateDiemDanh(_findSinhVien(r), r)) {
+            if (!_updateDiemDanh(_findSinhVien(r), r.deviceIdentifier)) {
               _danhSachDiemDanh.add(DiemDanh('...', 'Chưa xác định',
                   r.deviceIdentifier, r.deviceName, false, DateTime.now()));
             }
@@ -133,12 +133,21 @@ class StudentAttendanceController extends GetxController {
     await bluetooth.stopScan();
   }
 
-  void updateDiemDanh(DiemDanh diemDanh) {
-    int index = _danhSachDiemDanh
-        .indexWhere((ele) => ele.maSinhVien == diemDanh.maSinhVien);
-    if (index > -1) {
-      _danhSachDiemDanh[index] = diemDanh;
+  void updateDiemDanh(String maSinhVien, String maThietBi) {
+    int sinhVienIndex =
+        _danhSachDiemDanh.indexWhere((ele) => ele.maSinhVien.trim() == maSinhVien.trim());
+    int thietBiIndex =
+        _danhSachDiemDanh.indexWhere((ele) => ele.maThietBi.trim() == maThietBi.trim());
+    print('$sinhVienIndex - $thietBiIndex - $maSinhVien - $maThietBi');
+    if (sinhVienIndex > -1) {
+      _danhSachDiemDanh[sinhVienIndex].maThietBi = maThietBi;
+      _danhSachDiemDanh[sinhVienIndex].coMat = true;
     }
+
+    if (thietBiIndex != -1) {
+      _danhSachDiemDanh.removeAt(thietBiIndex);
+    }
+
     if (_updateState != null) _updateState!();
   }
 
@@ -245,7 +254,9 @@ class StudentAttendanceController extends GetxController {
 
   Iterable<DiemDanh> get danhSachCoMat =>
       _danhSachDiemDanh.where((diemdanh) => diemdanh.coMat);
-  Iterable<DiemDanh> get danhSachVang =>
-      _danhSachDiemDanh.where((diemdanh) => !diemdanh.coMat);
+  Iterable<DiemDanh> get danhSachVang => _danhSachDiemDanh
+      .where((diemdanh) => !diemdanh.coMat && diemdanh.maSinhVien != '...');
+  Iterable<DiemDanh> get danhSachChuaXacDinh => _danhSachDiemDanh
+      .where((diemdanh) => !diemdanh.coMat && diemdanh.maSinhVien == '...');
   List<DiemDanh> get danhSachDiemDanh => _danhSachDiemDanh;
 }

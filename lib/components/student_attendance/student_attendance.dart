@@ -167,6 +167,18 @@ class _StudentAttendanceState extends State<StudentAttendance> {
                               index: index);
                         },
                       ),
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: controller.danhSachChuaXacDinh.length,
+                        itemBuilder: (context, index) {
+                          return StudentAttendanceItem(
+                              onPressed: updateState,
+                              diemDanh:
+                                  controller.danhSachChuaXacDinh.elementAt(index),
+                              index: index);
+                        },
+                      ),
                     ],
                   ),
                 );

@@ -1,12 +1,52 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 // ignore: unused_import
 import 'package:http/http.dart' as http;
 import '/models/diem_danh.dart';
-import '/constants/api_endpoints.dart';
 import '/controllers/student_attendance_controller.dart';
+
+class DropdownButtonExample extends StatefulWidget {
+  final Iterable<DiemDanh> listItems;
+  final TextEditingController? maSinhVienController;
+  const DropdownButtonExample(
+      {super.key, required this.listItems, this.maSinhVienController});
+
+  @override
+  State<DropdownButtonExample> createState() => _DropdownButtonExampleState();
+}
+
+class _DropdownButtonExampleState extends State<DropdownButtonExample> {
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButton<String>(
+      value: widget.maSinhVienController!.text == ''
+          ? null
+          : widget.maSinhVienController!.text.trim(),
+      disabledHint: Text('Chọn sinh viên'),
+      icon: const Icon(Icons.arrow_downward),
+      isExpanded: true,
+      isDense: true,
+      elevation: 16,
+      underline: Container(
+        height: 2,
+        color: Colors.deepPurpleAccent,
+      ),
+      onChanged: (String? value) {
+        // This is called when the user selects an item.
+        setState(() {
+          widget.maSinhVienController!.text = value!;
+        });
+      },
+      items:
+          widget.listItems.map<DropdownMenuItem<String>>((DiemDanh diemDanh) {
+        return DropdownMenuItem<String>(
+          value: diemDanh.maSinhVien.trim(),
+          child: Text('${diemDanh.maSinhVien} - ${diemDanh.tenSinhVien}'),
+        );
+      }).toList(),
+    );
+  }
+}
 
 class StudentAttendanceItem extends StatefulWidget {
   final int index;
@@ -59,75 +99,43 @@ class _StudentAttendanceItemState extends State<StudentAttendanceItem> {
   }
 
   Future<void> updateFromMSSV() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? accessToken = prefs.getString("access_token");
-
-    var headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $accessToken'
-    };
-
-    Map body = {
-      'MaSinhVien': maSinhVienController.text.trim(),
-      'TenSinhVien': '',
-      'DanhSachThietBi': [widget.diemDanh.maThietBi]
-    };
-
-    var url = Uri.parse(ApiEndpoints.instance.studentDeviceEndpoint);
-    print('URL: $url');
-    try {
-      http.Response response =
-          await http.post(url, body: jsonEncode(body), headers: headers);
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        var sv = json["sinh_vien"];
-        print('body: $sv');
-        setState(() {
-          widget.diemDanh.maSinhVien = sv["MaSinhVien"];
-          widget.diemDanh.tenSinhVien = sv["TenSinhVien"];
-          widget.diemDanh.coMat = true;
-        });
-        final StudentAttendanceController controller = Get.find<StudentAttendanceController>();
-        controller.updateDiemDanh(widget.diemDanh);
-
-      } else {
-        final json = jsonDecode(response.body);
-        throw json["error_message"] ?? "Unknown error occurred";
-      }
-    } catch (err) {
-      print('ERROR: ${err.toString()}');
-    }
-
-    maSinhVienController.clear();
+    final StudentAttendanceController controller =
+        Get.find<StudentAttendanceController>();
+    controller.updateDiemDanh(maSinhVienController.text.trim(), widget.diemDanh.maThietBi);
     Navigator.of(context).pop();
   }
 
   void handlePressed() {
     if (widget.diemDanh.maSinhVien == '...') {
-      showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text('Mã sinh viên'),
-              content: TextField(
-                  controller: maSinhVienController,
-                  decoration: const InputDecoration(
-                      hintText: 'Nhập mã sinh viên...')),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: updateFromMSSV,
-                  child: const Text('Đồng ý'),
-                ),
-                TextButton(
-                  child: const Text('Huỷ'),
-                  onPressed: () {
-                    maSinhVienController.clear();
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          });
+      final StudentAttendanceController controller =
+          Get.find<StudentAttendanceController>();
+
+      Iterable<DiemDanh> listItems = controller.danhSachVang;
+
+      if (listItems.length > 0) {
+        showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('Sinh viên'),
+                content: DropdownButtonExample(
+                    listItems: listItems,
+                    maSinhVienController: maSinhVienController),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: updateFromMSSV,
+                    child: const Text('Đồng ý'),
+                  ),
+                  TextButton(
+                    child: const Text('Huỷ'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              );
+            });
+      }
     } else {
       widget.diemDanh.coMat = !widget.diemDanh.coMat;
     }
