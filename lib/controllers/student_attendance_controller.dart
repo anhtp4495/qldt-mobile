@@ -14,24 +14,29 @@ import '/models/bluetooth/scan_result.dart';
 class StudentAttendanceController extends GetxController {
   final IBluetooth bluetooth = BluetoothFactory.createBluetooth();
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
-  bool loading = true;
+  bool _initialized = false;
   bool scanning = false;
   List<SinhVien> _danhSachSinhVien = [];
-  List<DiemDanh> danhSachDiemDanh = [];
-  List<String> danhSachThietBi = [];
+  List<DiemDanh> _danhSachDiemDanh = [];
+  List<String> _danhSachThietBi = [];
+  String _maHoatDong = '';
+  String _tenBuoiHoatDong = '';
 
-  @override
-  void onInit() async {
-    super.onInit();
-    loading = true;
-    scanning = false;
+  Future<bool> initController() async {
+    if (_initialized) return true;
+    _initialized = true;
 
-    _danhSachSinhVien = await getDanhSachSinhVien();
-    danhSachDiemDanh = _danhSachSinhVien
+    final SharedPreferences prefs = await _prefs;
+    _maHoatDong = prefs.getString('ma_hoat_dong')!;
+    _tenBuoiHoatDong = prefs.getString('ten_buoi_hoat_dong')!;
+    _danhSachSinhVien = await _getDanhSachSinhVien();
+    _danhSachDiemDanh = _danhSachSinhVien
         .map<DiemDanh>((sv) =>
             DiemDanh(sv.maSinhVien, sv.tenSinhVien, '::::', '', false, null))
         .toList();
-    loading = false;
+
+    print('initialized');
+    return true;
   }
 
   String _findSinhVien(ScanResult result) {
@@ -50,11 +55,11 @@ class StudentAttendanceController extends GetxController {
 
   bool _updateDiemDanh(maSinhVien, maThietBi) {
     int index =
-        danhSachDiemDanh.indexWhere((ele) => ele.maSinhVien == maSinhVien);
+        _danhSachDiemDanh.indexWhere((ele) => ele.maSinhVien == maSinhVien);
     if (index != -1) {
-      danhSachDiemDanh[index].maThietBi = maThietBi;
-      danhSachDiemDanh[index].coMat = true;
-      danhSachDiemDanh[index].thoiGian = DateTime.now();
+      _danhSachDiemDanh[index].maThietBi = maThietBi;
+      _danhSachDiemDanh[index].coMat = true;
+      _danhSachDiemDanh[index].thoiGian = DateTime.now();
       return true;
     }
 
@@ -74,14 +79,14 @@ class StudentAttendanceController extends GetxController {
         bool shouldUpdated = false;
         for (ScanResult r in results) {
           if (r.deviceName == '') continue;
-          
+
           int thietBiIndex =
-              danhSachThietBi.indexWhere((ele) => ele == r.deviceIdentifier);
+              _danhSachThietBi.indexWhere((ele) => ele == r.deviceIdentifier);
           if (thietBiIndex == -1) {
             shouldUpdated = true;
-            danhSachThietBi.add(r.deviceIdentifier);
+            _danhSachThietBi.add(r.deviceIdentifier);
             if (!_updateDiemDanh(_findSinhVien(r), r)) {
-              danhSachDiemDanh.add(DiemDanh('...', 'Chưa xác định',
+              _danhSachDiemDanh.add(DiemDanh('...', 'Chưa xác định',
                   r.deviceIdentifier, r.deviceName, false, DateTime.now()));
             }
           }
@@ -112,16 +117,15 @@ class StudentAttendanceController extends GetxController {
   }
 
   void updateDiemDanh(DiemDanh diemDanh) {
-    int index = danhSachDiemDanh
+    int index = _danhSachDiemDanh
         .indexWhere((ele) => ele.maSinhVien == diemDanh.maSinhVien);
     if (index > -1) {
-      danhSachDiemDanh[index] = diemDanh;
+      _danhSachDiemDanh[index] = diemDanh;
     }
   }
 
-  Future<List<SinhVien>> getDanhSachSinhVien() async {
+  Future<List<SinhVien>> _getDanhSachSinhVien() async {
     List<SinhVien> danhSachSinhVien = [];
-    loading = true;
     final SharedPreferences prefs = await _prefs;
     String? accessToken = prefs.getString("access_token");
     int? maBuoiHoatDong = prefs.getInt("ma_buoi_hoat_dong");
@@ -171,7 +175,7 @@ class StudentAttendanceController extends GetxController {
       'Authorization': 'Bearer $accessToken'
     };
 
-    List<SinhVien> danhSachSinhVien = danhSachDiemDanh
+    List<SinhVien> danhSachSinhVien = _danhSachDiemDanh
         .where((dd) => dd.coMat && dd.maSinhVien != '...')
         .map<SinhVien>(
             (dd) => SinhVien(dd.maSinhVien, dd.tenSinhVien, [dd.maThietBi]))
@@ -210,23 +214,15 @@ class StudentAttendanceController extends GetxController {
     }
   }
 
-  Future<String> getTenBuoiHoatDong() async {
-    final SharedPreferences prefs = await _prefs;
-    String? maHoatDong = prefs.getString('ma_hoat_dong');
-    String? tenBuoiHoatDong = prefs.getString('ten_buoi_hoat_dong');
-    return '$maHoatDong $tenBuoiHoatDong';
-  }
+  bool get isLoaded => _initialized;
+  String get tieuDe => '$_maHoatDong $_tenBuoiHoatDong';
 
-  Future<String> getThongTinDiemDanh() async {
-    int siso = _danhSachSinhVien.length;
-    if (loading) {
-      var danhSachSinhVien = await getDanhSachSinhVien();
-      siso = danhSachSinhVien.length;
-    }
-    int comat = danhSachDiemDanh.where((diemdanh) => diemdanh.coMat).length;
-    int vang = siso - comat;
-    vang = vang > 0 ? vang : 0;
+  int get _siso => _danhSachSinhVien.length;
+  int get _comat =>
+      _danhSachDiemDanh.where((diemdanh) => diemdanh.coMat).length;
+  int get _vang => _siso > _comat ? _siso - _comat : 0;
+  String get thongTinDiemDanh =>
+      'Sỉ số: $_siso, Có mặt: $_comat, Vắng: $_vang';
 
-    return 'Sỉ số: $siso, Có mặt: $comat, Vắng: $vang';
-  }
+  List<DiemDanh> get danhSachDiemDanh => _danhSachDiemDanh;
 }

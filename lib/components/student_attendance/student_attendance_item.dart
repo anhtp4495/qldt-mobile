@@ -59,7 +59,6 @@ class _StudentAttendanceItemState extends State<StudentAttendanceItem> {
   Future<void> updateFromMSSV() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     String? accessToken = prefs.getString("access_token");
-    int? maBuoiHoatDong = prefs.getInt("ma_buoi_hoat_dong");
 
     var headers = {
       'Content-Type': 'application/json',
@@ -143,7 +142,8 @@ class _StudentAttendanceItemState extends State<StudentAttendanceItem> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Text(widget.diemDanh.maSinhVien),
-                Text('${widget.diemDanh.maThietBi} - ${widget.diemDanh.tenThietBi}'),
+                Text(
+                    '${widget.diemDanh.maThietBi} - ${widget.diemDanh.tenThietBi}'),
               ]),
           trailing: IconButton(
             onPressed: handlePressed,

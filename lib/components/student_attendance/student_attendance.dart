@@ -12,7 +12,7 @@ class StudentAttendance extends StatefulWidget {
 }
 
 class _StudentAttendanceState extends State<StudentAttendance> {
-  final StudentAttendanceController studentAttendanceController =
+  final StudentAttendanceController controller =
       Get.put(StudentAttendanceController());
 
   void updateState() {
@@ -20,10 +20,10 @@ class _StudentAttendanceState extends State<StudentAttendance> {
   }
 
   ElevatedButton getButton() {
-    if (studentAttendanceController.scanning) {
+    if (controller.scanning) {
       return ElevatedButton(
         onPressed: () {
-          studentAttendanceController.stopScan();
+          controller.stopScan();
           setState(() {});
         },
         style: ElevatedButton.styleFrom(
@@ -52,7 +52,7 @@ class _StudentAttendanceState extends State<StudentAttendance> {
 
     return ElevatedButton(
       onPressed: () {
-        studentAttendanceController.startScan(updateState);
+        controller.startScan(updateState);
         setState(() {});
       },
       style: ElevatedButton.styleFrom(
@@ -80,96 +80,73 @@ class _StudentAttendanceState extends State<StudentAttendance> {
   Widget build(BuildContext context) {
     return AppbarBackground(
         title: "Điểm danh",
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              FutureBuilder(
-                future: studentAttendanceController.getTenBuoiHoatDong(),
-                builder: (context, snapshot) {
-                  String str = 'Hoạt Động';
-                  if (snapshot.hasData) {
-                    str = snapshot.data as String;
-                  }
-                  return Text(
-                    str,
-                    style: const TextStyle(fontSize: 18),
-                  );
-                },
-              ),
-              FutureBuilder(
-                  future: studentAttendanceController.getThongTinDiemDanh(),
-                  builder: (context, snapshot) {
-                    String str = 'Sỉ số: x, Có mặt: 0, Vắng: x';
-                    if (snapshot.hasData) {
-                      str = snapshot.data as String;
-                    }
-                    return Text(
-                      str,
-                      style: const TextStyle(fontSize: 18),
-                    );
-                  }),
-              const SizedBox(height: 5 * 3),
-              Row(
-                children: [
-                  getButton(),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: studentAttendanceController.dongBoDuLieuDiemDanh,
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.blue,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(5)),
-                      ),
-                    ),
-                    child: Row(children: const [
-                      Icon(
-                        Icons.cloud_upload_sharp,
-                        color: Colors.white,
-                      ),
-                      SizedBox(width: 8),
+        child: FutureBuilder(
+            future: controller.initController(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return SingleChildScrollView(
+                  child: Column(
+                    children: [
                       Text(
-                        'Đồng bộ',
-                        style: TextStyle(fontSize: 18),
-                      )
-                    ]),
+                        controller.tieuDe,
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                      Text(
+                        controller.thongTinDiemDanh,
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                      const SizedBox(height: 5 * 3),
+                      Row(
+                        children: [
+                          getButton(),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: controller.dongBoDuLieuDiemDanh,
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.blue,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(5)),
+                              ),
+                            ),
+                            child: Row(children: const [
+                              Icon(
+                                Icons.cloud_upload_sharp,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Đồng bộ',
+                                style: TextStyle(fontSize: 18),
+                              )
+                            ]),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: controller.danhSachDiemDanh.length,
+                        itemBuilder: (context, index) {
+                          return StudentAttendanceItem(
+                              onPressed: updateState,
+                              diemDanh: controller.danhSachDiemDanh[index],
+                              index: index);
+                        },
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              FutureBuilder(
-                future: studentAttendanceController.getDanhSachSinhVien(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount:
-                          studentAttendanceController.danhSachDiemDanh.length,
-                      itemBuilder: (context, index) {
-                        return StudentAttendanceItem(
-                            onPressed: updateState,
-                            diemDanh: studentAttendanceController
-                                .danhSachDiemDanh[index],
-                            index: index);
-                      },
-                    );
-                  } else if (snapshot.hasError) {
-                    return Text(snapshot.error.toString());
-                  }
+                );
+              } else if (snapshot.hasError) {
+                return Text(snapshot.error.toString());
+              }
 
-                  if (studentAttendanceController.loading) {
-                    return Container(
-                        margin: const EdgeInsets.all(8),
-                        alignment: FractionalOffset.center,
-                        child: const CircularProgressIndicator());
-                  }
-                  // By default show a loading spinner.
-                  return const Text('Không có dữ liệu');
-                },
-              ),
-            ],
-          ),
-        ));
+              return Container(
+                  margin: const EdgeInsets.all(8),
+                  alignment: FractionalOffset.center,
+                  child: const CircularProgressIndicator());
+            }));
   }
 }
