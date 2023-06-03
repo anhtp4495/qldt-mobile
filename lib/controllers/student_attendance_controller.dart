@@ -29,16 +29,21 @@ class StudentAttendanceController extends GetxController {
     _danhSachSinhVien = await getDanhSachSinhVien();
     danhSachDiemDanh = _danhSachSinhVien
         .map<DiemDanh>((sv) =>
-            DiemDanh(sv.maSinhVien, sv.tenSinhVien, '::::', false, null))
+            DiemDanh(sv.maSinhVien, sv.tenSinhVien, '::::', '', false, null))
         .toList();
     loading = false;
   }
 
-  String _findSinhVien(maThietBi) {
+  String _findSinhVien(ScanResult result) {
     int index = _danhSachSinhVien.indexWhere((ele) =>
-        ele.danhSachThietBi.indexWhere((ele) => ele == maThietBi) != -1);
+        ele.danhSachThietBi
+            .indexWhere((ele) => ele == result.deviceIdentifier) !=
+        -1);
     if (index != -1) {
       return _danhSachSinhVien[index].maSinhVien;
+    } else {
+      index = _danhSachSinhVien
+          .indexWhere((ele) => ele.maSinhVien == result.deviceName);
     }
     return "";
   }
@@ -68,15 +73,16 @@ class StudentAttendanceController extends GetxController {
         // do something with scan results
         bool shouldUpdated = false;
         for (ScanResult r in results) {
+          if (r.deviceName == '') continue;
+          
           int thietBiIndex =
               danhSachThietBi.indexWhere((ele) => ele == r.deviceIdentifier);
           if (thietBiIndex == -1) {
             shouldUpdated = true;
             danhSachThietBi.add(r.deviceIdentifier);
-            if (!_updateDiemDanh(
-                _findSinhVien(r.deviceIdentifier), r.deviceIdentifier)) {
+            if (!_updateDiemDanh(_findSinhVien(r), r)) {
               danhSachDiemDanh.add(DiemDanh('...', 'Chưa xác định',
-                  r.deviceIdentifier, false, DateTime.now()));
+                  r.deviceIdentifier, r.deviceName, false, DateTime.now()));
             }
           }
         }

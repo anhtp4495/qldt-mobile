@@ -143,7 +143,7 @@ class _StudentAttendanceItemState extends State<StudentAttendanceItem> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Text(widget.diemDanh.maSinhVien),
-                Text(widget.diemDanh.maThietBi),
+                Text('${widget.diemDanh.maThietBi} - ${widget.diemDanh.tenThietBi}'),
               ]),
           trailing: IconButton(
             onPressed: handlePressed,
